@@ -26,6 +26,7 @@ import com.cyanogenmod.updater.UpdatesSettings;
 import com.cyanogenmod.updater.misc.Constants;
 import com.cyanogenmod.updater.receiver.DownloadNotifier;
 import com.cyanogenmod.updater.utils.Utils;
+import com.cyanogenmod.updater.utils.MD5;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,11 +51,16 @@ public class DownloadCompleteIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (!intent.hasExtra(Constants.DOWNLOAD_ID)) {
+        if (!intent.hasExtra(Constants.DOWNLOAD_ID) ||
+                !intent.hasExtra(Constants.DOWNLOAD_NAME) ||
+                !intent.hasExtra(Constants.DOWNLOAD_MD5)) {
+            Log.e(TAG, "Missing intent extra data");
             return;
         }
 
         long id = intent.getLongExtra(Constants.DOWNLOAD_ID, -1);
+        final String destName = intent.getStringExtra(Constants.DOWNLOAD_NAME);
+        String downloadedMD5 = intent.getStringExtra(Constants.DOWNLOAD_MD5);
 
         Intent updateIntent = new Intent(this, UpdatesActivity.class);
         updateIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
@@ -94,12 +100,16 @@ public class DownloadCompleteIntentService extends IntentService {
                 mDm.remove(id);
             }
 
-            // Check the signature of the downloaded file
-            try {
-                android.os.RecoverySystem.verifyPackage(destFile, null, null);
-            } catch (Exception e) {
-                if (destFile.exists()) {
-                    destFile.delete();
+
+            // Start the MD5 check of the downloaded file
+            if (!MD5.checkMD5(downloadedMD5, destFileTmp)) {
+                Log.e(TAG, "Verification failed");
+                if (destFileTmp.exists()) {
+                    destFileTmp.delete();
+                    displayErrorResult(updateIntent, R.string.verification_failed);
+                } else {
+                    // The download was probably stopped. Exit silently
+                    Log.e(TAG, "Error while verifying the file");
                 }
                 displayErrorResult(updateIntent, R.string.verification_failed);
                 return;

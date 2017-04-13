@@ -286,7 +286,7 @@ public class UpdatesSettings extends PreferenceFragment implements
 
             if (cursor == null || !cursor.moveToFirst()) {
                 // DownloadReceiver has likely already removed the download
-                // from the DB due to failure or signature mismatch
+                // from the DB due to failure or MD5 mismatch
                 status = DownloadManager.STATUS_FAILED;
             } else {
                 status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
@@ -351,6 +351,7 @@ public class UpdatesSettings extends PreferenceFragment implements
                         // Clear the stored data from shared preferences
                         mPrefs.edit()
                                 .remove(Constants.DOWNLOAD_ID)
+                                .remove(Constants.DOWNLOAD_MD5)
                                 .apply();
 
                         showSnack(mContext.getString(R.string.download_cancelled));
