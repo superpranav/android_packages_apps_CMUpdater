@@ -351,6 +351,7 @@ public class UpdatesSettings extends PreferenceFragment implements
                         // Clear the stored data from shared preferences
                         mPrefs.edit()
                                 .remove(Constants.DOWNLOAD_ID)
+                                .remove(Constants.DOWNLOAD_NAME)
                                 .remove(Constants.DOWNLOAD_MD5)
                                 .apply();
 
